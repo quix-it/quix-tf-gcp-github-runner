@@ -7,6 +7,7 @@ provider "google" {
 
 resource "google_project_service" "gcp_services" {
   for_each = toset([
+    "iam.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "cloudscheduler.googleapis.com",
     "secretmanager.googleapis.com",
@@ -20,20 +21,39 @@ resource "google_project_service" "gcp_services" {
   disable_on_destroy = false
 }
 
+resource "google_compute_network" "network" {
+  name                    = var.runner.network
+  auto_create_subnetworks = true
+}
+
 terraform {
-  backend "remote" {}
+  backend "local" {}
 }
 
 module "start_and_stop" {
-  source                 = "./modules/start-and-stop"
+  source                       = "./modules/start-and-stop"
+  google                       = var.google
+  runner                       = var.runner
+  scaling                      = var.scaling
+  triggers                     = var.triggers
+  github_api_trigger_url       = module.github_api.https_trigger_url
+  github_org                   = var.github.organisation
+  get_remove_token_trigger_url = module.get_remove_token.https_trigger_url
+
+  depends_on = [
+    google_project_service.gcp_services
+  ]
+}
+
+module "get_remove_token" {
+  source                 = "./modules/get-remove-token"
   google                 = var.google
-  runner                 = var.runner
-  scaling                = var.scaling
-  triggers               = var.triggers
-  github_api_trigger_url = module.github_api.github_api_trigger_url
+  github_api_trigger_url = module.github_api.https_trigger_url
   github_org             = var.github.organisation
 
-  depends_on = [google_project_service.gcp_services]
+  depends_on = [
+    google_project_service.gcp_services
+  ]
 }
 
 module "github_api" {
@@ -62,4 +82,28 @@ module "github_hook" {
 
 output "github_webhook_url" {
   value = module.github_hook.github_hook_trigger_url
+}
+
+locals {
+  github_api_invokers = [
+    "serviceAccount:${module.start_and_stop.function_service_account_name}",
+    "serviceAccount:${module.get_remove_token.function_service_account_name}"
+  ]
+  get_remove_token_invokers = [
+    "serviceAccount:${module.start_and_stop.runner_service_account_name}"
+  ]
+}
+
+resource "google_cloudfunctions_function_iam_member" "github_api_invokers" {
+  count          = length(local.github_api_invokers)
+  cloud_function = module.github_api.function_name
+  role           = "roles/cloudfunctions.invoker"
+  member         = local.github_api_invokers[count.index]
+}
+
+resource "google_cloudfunctions_function_iam_member" "get_remove_token_invokers" {
+  count          = length(local.get_remove_token_invokers)
+  cloud_function = module.get_remove_token.function_name
+  role           = "roles/cloudfunctions.invoker"
+  member         = local.get_remove_token_invokers[count.index]
 }

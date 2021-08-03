@@ -2,6 +2,9 @@ variable "runner" {
   type = object({
     type         = string
     taint_labels = bool
+    preemptible  = bool
+    network      = string
+    image        = string
   })
   description = <<EOT
   `type`: The [machine type](https://cloud.google.com/compute/docs/machine-types) of the runners, for instance `n1-standard-2`.<br>

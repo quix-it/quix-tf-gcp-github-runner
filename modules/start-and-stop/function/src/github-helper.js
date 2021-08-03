@@ -12,6 +12,8 @@ module.exports.checkGitHubRunnerStatus = checkGitHubRunnerStatus
 module.exports.getNonBusyGcpGitHubRunnersCount = getNonBusyGcpGitHubRunnersCount
 module.exports.gitHubGhostRunnerExists = gitHubGhostRunnerExists
 module.exports.getOfflineGitHubRunners = getOfflineGitHubRunners
+module.exports.listWorkflowRunsForRepo = listWorkflowRunsForRepo
+module.exports.createRegistrationToken = createRegistrationToken
 
 async function getGitHubRunners () {
   const githubApiFunctionUrl = process.env.GITHUB_API_TRIGGER_URL
@@ -114,4 +116,82 @@ async function getOfflineGitHubRunners () {
     return gcpGitHubRunner.status === 'offline'
   })
   return offlineGcpGitHubRunners
+}
+
+async function listWorkflowRunsForRepo (owner, repo) {
+  const githubApiFunctionUrl = process.env.GITHUB_API_TRIGGER_URL
+  const client = await auth.getIdTokenClient(githubApiFunctionUrl)
+  const res = await client.request({
+    url: githubApiFunctionUrl,
+    method: 'POST',
+    data: {
+      scope: 'actions',
+      function: 'listWorkflowRunsForRepo',
+      params: {
+        owner: owner,
+        repo: repo
+      }
+    }
+  })
+  return res.data.workflow_runs
+}
+
+async function listJobsForWorkflowRun (owner, repo, run_id) {
+  const githubApiFunctionUrl = process.env.GITHUB_API_TRIGGER_URL
+  const client = await auth.getIdTokenClient(githubApiFunctionUrl)
+  const res = await client.request({
+    url: githubApiFunctionUrl,
+    method: 'POST',
+    data: {
+      scope: 'actions',
+      function: 'listJobsForWorkflowRun',
+      params: {
+        owner: owner,
+        repo: repo,
+        run_id: run_id
+      }
+    }
+  })
+  return res.data.jobs
+}
+
+async function getRepoContent (owner, repo, path, ref = null) {
+  const githubApiFunctionUrl = process.env.GITHUB_API_TRIGGER_URL
+  const client = await auth.getIdTokenClient(githubApiFunctionUrl)
+  const optparams = {}
+  if (ref != null) {
+    optparams.ref = ref
+  }
+  const res = await client.request({
+    url: githubApiFunctionUrl,
+    method: 'POST',
+    data: {
+      scope: 'repos',
+      function: 'getContent',
+      params: {
+        owner: owner,
+        repo: repo,
+        path: path,
+        ...optparams
+      }
+    }
+  })
+  return res.data
+}
+
+async function createRegistrationToken () {
+  const githubApiFunctionUrl = process.env.GITHUB_API_TRIGGER_URL
+  const client = await auth.getIdTokenClient(githubApiFunctionUrl)
+  const res = await client.request({
+    url: githubApiFunctionUrl,
+    method: 'POST',
+    data: {
+      scope: 'actions',
+      function: 'createRegistrationTokenForOrg',
+      params: {
+        org: process.env.GITHUB_ORG
+      }
+    }
+  })
+  return res.data.token
 }

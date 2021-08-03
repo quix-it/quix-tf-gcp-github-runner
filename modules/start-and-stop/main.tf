@@ -28,20 +28,24 @@ resource "google_cloudfunctions_function" "start_and_stop" {
   max_instances         = 1
 
   environment_variables = {
-    "GOOGLE_ZONE"            = var.google.zone
-    "GOOGLE_ENV"             = var.google.env
-    "GOOGLE_PROJECT"         = var.google.project
-    "GOOGLE_TIMEZONE"        = var.google.time_zone
-    "RUNNER_TAINT_LABELS"    = var.runner.taint_labels
-    "RUNNER_MACHINE_TYPE"    = var.runner.type
-    "RUNNER_SERVICE_ACCOUNT" = google_service_account.runner.email
-    "SCALING_IDLE_COUNT"     = var.scaling.idle_count
-    "SCALING_IDLE_SCHEDULE"  = var.scaling.idle_schedule
-    "SCALING_UP_RATE"        = var.scaling.up_rate
-    "SCALING_UP_MAX"         = var.scaling.up_max
-    "SCALING_DOWN_RATE"      = var.scaling.down_rate
-    "GITHUB_API_TRIGGER_URL" = var.github_api_trigger_url
-    "GITHUB_ORG"             = var.github_org
+    "GOOGLE_ZONE"              = var.google.zone
+    "GOOGLE_ENV"               = var.google.env
+    "GOOGLE_PROJECT"           = var.google.project
+    "GOOGLE_TIMEZONE"          = var.google.time_zone
+    "RUNNER_TAINT_LABELS"      = var.runner.taint_labels
+    "RUNNER_MACHINE_TYPE"      = var.runner.type
+    "RUNNER_PREEMPTIBLE"       = var.runner.preemptible
+    "RUNNER_SERVICE_ACCOUNT"   = google_service_account.runner.email
+    "RUNNER_NETWORK"           = var.runner.network
+    "RUNNER_IMAGE"             = var.runner.image
+    "SCALING_IDLE_COUNT"       = var.scaling.idle_count
+    "SCALING_IDLE_SCHEDULE"    = var.scaling.idle_schedule
+    "SCALING_UP_RATE"          = var.scaling.up_rate
+    "SCALING_UP_MAX"           = var.scaling.up_max
+    "SCALING_DOWN_RATE"        = var.scaling.down_rate
+    "GITHUB_API_TRIGGER_URL"   = var.github_api_trigger_url
+    "GITHUB_ORG"               = var.github_org
+    "REMOVE_TOKEN_TRIGGER_URL" = var.get_remove_token_trigger_url
   }
 
   event_trigger {
@@ -67,6 +71,14 @@ resource "google_cloud_scheduler_job" "healthcheck" {
     topic_name = google_pubsub_topic.start_and_stop.id
     data       = base64encode("{\"action\":\"healthcheck\"}")
   }
+
+  provisioner "local-exec" {
+    command = "gcloud scheduler jobs run healthcheck"
+  }
+
+  depends_on = [
+    google_cloudfunctions_function.start_and_stop
+  ]
 }
 
 resource "google_cloud_scheduler_job" "renew_runners" {
@@ -101,10 +113,10 @@ resource "google_project_iam_member" "start_and_stop_compute_admin" {
   member = "serviceAccount:${google_service_account.start_and_stop.email}"
 }
 
-resource "google_project_iam_member" "start_and_stop_cloudfunctions_invoker" {
-  role   = "roles/cloudfunctions.invoker"
-  member = "serviceAccount:${google_service_account.start_and_stop.email}"
-}
+# resource "google_project_iam_member" "start_and_stop_cloudfunctions_invoker" {
+#   role   = "roles/cloudfunctions.invoker"
+#   member = "serviceAccount:${google_service_account.start_and_stop.email}"
+# }
 
 resource "google_project_iam_member" "start_and_stop_iam_service_account_user" {
   role   = "roles/iam.serviceAccountUser"
@@ -121,10 +133,10 @@ resource "google_project_iam_member" "runner_compute_oslogin" {
   member = "serviceAccount:${google_service_account.runner.email}"
 }
 
-resource "google_project_iam_member" "runner_cloudfunctions_invoker" {
-  role   = "roles/cloudfunctions.invoker"
-  member = "serviceAccount:${google_service_account.runner.email}"
-}
+# resource "google_project_iam_member" "runner_cloudfunctions_invoker" {
+#   role   = "roles/cloudfunctions.invoker"
+#   member = "serviceAccount:${google_service_account.runner.email}"
+# }
 
 resource "google_project_iam_member" "runner_logging_logwriter" {
   role   = "roles/logging.logWriter"
@@ -138,4 +150,16 @@ resource "google_project_iam_member" "runner_monitoring_metricwriter" {
 
 output "start_and_stop_topic_name" {
   value = google_pubsub_topic.start_and_stop.name
+}
+
+output "function_name" {
+  value = google_cloudfunctions_function.start_and_stop.name
+}
+
+output "function_service_account_name" {
+  value = google_service_account.start_and_stop.email
+}
+
+output "runner_service_account_name" {
+  value = google_service_account.runner.email
 }

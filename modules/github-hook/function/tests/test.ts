@@ -45,7 +45,7 @@ describe('GithubHook', () => {
       const request = httpMocks.createRequest({
         method: 'POST',
         headers: {
-          'x-hub-signature': signature + 'abc'
+          'x-hub-signature-256': signature + 'abc'
         },
         body: body
       })
@@ -56,7 +56,7 @@ describe('GithubHook', () => {
       const request = httpMocks.createRequest({
         method: 'POST',
         headers: {
-          'x-hub-signature': signature
+          'x-hub-signature-256': signature
         },
         body: body
       })

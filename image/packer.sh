@@ -42,12 +42,28 @@ source "$project_root_path"/.tools/extract-and-export.sh "$env_file_path"
 # shellcheck source=.tools/load-google-auth.sh
 source "$project_root_path"/.tools/load-google-auth.sh "$env_file_path"
 
+network=$(jq -r '.builders[]|select(.type=="googlecompute")|.network' < $packer_project_path/runner.json)
+my_public_ip=$(curl -s https://api.ipify.org)
+
+rule_name=packer-allow-ssh-$(dd if=/dev/urandom bs=16 count=1 2>/dev/null | md5sum | cut -d" " -f1)
+
+if [ ! -z "$network" ]; then
+  gcloud compute networks describe $network >/dev/null 2>&1 || gcloud compute networks create $network
+  gcloud compute firewall-rules describe $rule_name >/dev/null 2>&1 || gcloud compute firewall-rules create $rule_name --network $network --allow tcp:22 --source-ranges ${my_public_ip}/32
+fi
+
 packer_cmd="packer $packer_action \
   -var region=$GOOGLE_REGION \
   -var zone=$GOOGLE_ZONE \
   -var machine_type=$RUNNER_MACHINE_TYPE \
+  -var image=$RUNNER_IMAGE \
   -var project_id=$GOOGLE_PROJECT \
   -var path=$packer_project_path \
   $packer_project_path/runner.json"
 
 eval "$packer_cmd"
+
+if [ ! -z "$network" ]; then
+  gcloud compute firewall-rules delete --quiet $rule_name
+  gcloud compute networks delete --quiet $network
+fi

@@ -9,6 +9,11 @@ usage () {
   exit 1
 }
 
+init () {
+  jq -r '.google.credentials_json_b64' $google_env_file_path | base64 -d > $(dirname $google_env_file_path)/auth.json
+  gcloud auth activate-service-account $(jq -r .client_email $(dirname $google_env_file_path)/auth.json) --key-file=$(dirname $google_env_file_path)/auth.json --project=$(jq -r .project_id $(dirname $google_env_file_path)/auth.json)
+}
+
 packer_deploy () {
   # Deploy packer image
   echo "Deploying runner image using packer..."
@@ -35,13 +40,14 @@ packer_deploy () {
 
 terraform_deploy () {
   # Compile TS
-  declare -a js_src_folders=("modules/start-and-stop/function" "modules/github-api/src" "modules/github-hook/function")
-  for js_src_folder in "${js_src_folders[@]}"
-  do
-    cd "$project_root_path/$js_src_folder"
-    npm install
-    npm run build
-  done
+  declare -a js_src_folders=("modules/start-and-stop/function" "modules/github-api/src" "modules/github-hook/function" "modules/get-remove-token/function")
+  if [ "$skip_function_rebuild" = "false" ]; then
+    for js_src_folder in "${js_src_folders[@]}"; do
+      cd "$project_root_path/$js_src_folder" && echo "$js_src_folder"
+      npm ci && npm run build
+    done
+    # while [ $(jobs | wc -l) -gt 0 ]; do sleep 1; done
+  fi
   cd "$project_root_path"
 
   # Deploy terraform
@@ -60,6 +66,7 @@ terraform_deploy () {
 skip_packer_deploy=false
 skip_terraform_deploy=false
 auto_approve=false
+skip_function_rebuild=false
 
 # Parsing script params
 while true; do
@@ -72,6 +79,7 @@ while true; do
     --skip-packer-deploy ) skip_packer_deploy=true; shift 1;;
     --skip-terraform-deploy ) skip_terraform_deploy=true; shift 1;;
     --auto-approve ) auto_approve=true; shift 1;;
+    --skip-function-rebuild ) skip_function_rebuild=true; shift 1;;
     * ) break ;;
   esac
 done
@@ -108,6 +116,8 @@ project_root_path=$(realpath "$(dirname "$0")/..")
 
 # cd project root directory
 cd "$project_root_path"
+
+init
 
 if [ "$skip_packer_deploy" = true ]; then
   echo "Skipping packer deploy"

@@ -40,7 +40,7 @@ function createRunnerName (type) {
 }
 
 async function createRunnerVm (runnerName, type) {
-  const createVmPromise = zone.createVM(runnerName, createVmConfig(type, env))
+  const createVmPromise = zone.createVM(runnerName, await createVmConfig(type, env))
   utils.logPromise(createVmPromise, `create runner ${runnerName} VM (type:${type})`)
   const [vm] = await createVmPromise
 
@@ -74,24 +74,30 @@ async function waitForRunnerConnectedToGitHub (vm, type) {
   await githubApiConnectionPromise
 }
 
-function createVmConfig (type, env) {
+async function createVmConfig (type, env) {
   const startScript = Fs.readFileSync('runner-scripts/start-script.sh', 'utf8')
   const stopScript = Fs.readFileSync('runner-scripts/stop-script.sh', 'utf8')
+  const token = await githubHelper.createRegistrationToken()
   const config = {
     machineType: process.env.RUNNER_MACHINE_TYPE,
     https: true,
+    scheduling: {
+      automaticRestart: false,
+      preemptible: (process.env.RUNNER_PREEMPTIBLE == "true")
+    },
     disks: [
       {
         boot: true,
         autoDelete: true,
         initializeParams: {
-          sourceImage: `https://www.googleapis.com/compute/v1/projects/${project}/global/images/debian-runner`
+          sourceImage: `global/images/${process.env.RUNNER_IMAGE}`
         }
       }
     ],
     networkInterfaces: [
       {
-        network: 'global/networks/default'
+        network: `global/networks/${process.env.RUNNER_NETWORK || 'default'}`,
+        accessConfigs: []
       }
     ],
     labels: {
@@ -109,8 +115,20 @@ function createVmConfig (type, env) {
     metadata: {
       items: [
         {
-          value: process.env.GITHUB_API_TRIGGER_URL,
-          key: 'github-api-trigger-url'
+          value: type,
+          key: 'type'
+        },
+        {
+          value: env,
+          key: 'env'
+        },
+        {
+          value: token,
+          key: 'registration-token'
+        },
+        {
+          value: process.env.REMOVE_TOKEN_TRIGGER_URL,
+          key: 'get-remove-token-trigger-url'
         },
         {
           value: process.env.GITHUB_ORG,

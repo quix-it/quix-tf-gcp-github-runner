@@ -17,7 +17,9 @@ project_root_path=$(realpath "$script_dir/..")
 auth_path="$project_root_path/auth.json"
 
 # Setup google credentials
-credentials_json_b64=$(jq -r .google.credentials_json_b64 "$json_file_path")
-credentials_json=$(echo "$credentials_json_b64" | base64 -d)
-echo "$credentials_json" > "$auth_path"
+# credentials_json_b64=$(jq -r .google.credentials_json_b64 "$json_file_path")
+# credentials_json=$(echo "$credentials_json_b64" | base64 -d)
+# echo "$credentials_json" > "$auth_path"
+
+jq -r .google.credentials_json_b64 "$json_file_path" | base64 -d > "$auth_path"
 export GOOGLE_APPLICATION_CREDENTIALS="$auth_path"

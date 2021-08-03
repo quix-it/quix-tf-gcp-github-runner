@@ -49,6 +49,7 @@ extract_and_export ".google.time_zone" "$json_file_path" "GOOGLE_TIMEZONE"
 
 extract_and_export ".runner.type" "$json_file_path" "RUNNER_MACHINE_TYPE"
 extract_and_export ".runner.taint_labels" "$json_file_path" "RUNNER_TAINT_LABELS"
+extract_and_export ".runner.image" "$json_file_path" "RUNNER_IMAGE"
 
 extract_and_export ".scaling.idle_count" "$json_file_path" "SCALING_IDLE_COUNT"
 extract_and_export ".scaling.idle_schedule" "$json_file_path" "SCALING_IDLE_SCHEDULE"

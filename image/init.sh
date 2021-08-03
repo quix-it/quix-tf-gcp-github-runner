@@ -30,7 +30,7 @@ sudo add-apt-repository \
    $(lsb_release -cs) \
    stable"
 sudo apt-get -y update
-DOCKER_VERSION="5:19.03.14~3-0~debian-buster"
+DOCKER_VERSION="5:20.10.7~3-0~debian-buster"
 sudo apt-get -y install docker-ce=$DOCKER_VERSION docker-ce-cli=$DOCKER_VERSION containerd.io
 sudo systemctl start docker
 sudo systemctl enable docker

@@ -41,6 +41,14 @@ resource "google_project_iam_member" "github_api_secretmanager_secretaccessor" {
   member = "serviceAccount:${google_service_account.github_api.email}"
 }
 
-output "github_api_trigger_url" {
+output "https_trigger_url" {
   value = google_cloudfunctions_function.github_api.https_trigger_url
+}
+
+output "function_name" {
+  value = google_cloudfunctions_function.github_api.name
+}
+
+output "function_service_account_name" {
+  value = google_service_account.github_api.email
 }

@@ -16,7 +16,7 @@ resource "google_storage_bucket_object" "github_hook_zip" {
 }
 
 resource "google_cloudfunctions_function" "github_hook" {
-  name                  = "github_hook_function"
+  name                  = "github_hook"
   description           = "Receive GitHub hooks"
   runtime               = "nodejs12"
   available_memory_mb   = 128

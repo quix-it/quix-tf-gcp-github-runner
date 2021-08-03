@@ -25,21 +25,33 @@ export const githubHook: HttpFunction = async (req: Request, res: Response) => {
   const checkRunPayload = createCheckRunPayload(req)
   console.info(`event is a queued check_run : ${JSON.stringify(checkRunPayload)}`)
 
-  if (checkRunPayload.repository.toLowerCase().includes('ios')) {
-    console.info('looks like a iOS workflow, ignoring...')
-    res.sendStatus(202)
-    return
-  }
+  // if (checkRunPayload.repository.toLowerCase().includes('ios')) {
+  //   console.info('looks like a iOS workflow, ignoring...')
+  //   res.sendStatus(202)
+  //   return
+  // }
 
+  // const payload = {
+  //   check_run_id: req.body.check_run.id,
+  //   head_sha: req.body.check_run.head_sha,
+  //   check_suite_id: req.body.check_run.check_suite.id,
+  //   repository_full_name: req.body.repository.full_name,
+  //   repository_name: req.body.repository.name,
+  //   repository_owner: req.body.repository.owner.login
+  // }
   await sendScaleUpMessage()
 
   res.sendStatus(202)
 }
 
-async function sendScaleUpMessage () {
+async function sendScaleUpMessage (initdata = {}) {
   console.info('sending scale up message...')
   const topicName = process.env.START_AND_STOP_TOPIC_NAME!
-  const data = JSON.stringify({ action: 'scale_up' })
+  const payload = {
+    ...initdata,
+    action: 'scale_up'
+  }
+  const data = JSON.stringify(payload)
   const pubsub = new PubSub()
   const dataBuffer = Buffer.from(data)
   await pubsub.topic(topicName).publish(dataBuffer)
@@ -54,17 +66,17 @@ export async function validateRequest (req: Request) {
 }
 
 async function authenticateRequest (req: Request) {
-  const signatureHeader = req.get('x-hub-signature')
+  const signatureHeader = req.get('x-hub-signature-256')
   if (!signatureHeader) {
-    throw new Error('no x-hub-signature header')
+    throw new Error('no x-hub-signature-256 header')
   }
   const payload = JSON.stringify(req.body)
   if (!payload) {
     throw new Error('no body')
   }
   const secret = await getGithubWebhookSecret()
-  const hmac = crypto.createHmac('sha1', secret)
-  const digest = Buffer.from('sha1=' + hmac.update(payload).digest('hex'), 'utf8')
+  const hmac = crypto.createHmac('sha256', secret)
+  const digest = Buffer.from('sha256=' + hmac.update(payload).digest('hex'), 'utf8')
   const checksum = Buffer.from(signatureHeader, 'utf8')
   if (checksum.length !== digest.length || !crypto.timingSafeEqual(digest, checksum)) {
     throw new Error('signature does not match')
@@ -112,8 +124,8 @@ function createCheckRunPayload (request: Request): CheckRunPayload {
 }
 
 export function generateSignature (secret: string, payload: string): string {
-  const hmac = crypto.createHmac('sha1', secret)
-  const digest = Buffer.from('sha1=' + hmac.update(payload).digest('hex'), 'utf8')
+  const hmac = crypto.createHmac('sha256', secret)
+  const digest = Buffer.from('sha256=' + hmac.update(payload).digest('hex'), 'utf8')
   return digest.toString('utf8')
 }
 

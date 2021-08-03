@@ -4,7 +4,7 @@ echo "start stop script"
 
 RUNNER_USER="runner"
 ZONE=$(curl -H Metadata-Flavor:Google http://metadata/computeMetadata/v1/instance/zone)
-RUNNER_TYPE=$(gcloud compute instances describe "$HOSTNAME" --zone "$ZONE" --flatten="labels[type]" --format=object)
+RUNNER_TYPE=$(curl -H Metadata-Flavor:Google http://metadata/computeMetadata/v1/instance/attributes/type)
 
 ## Exit now if ghost runner
 if [ "$RUNNER_TYPE" = "ghost" ]; then
@@ -13,12 +13,8 @@ if [ "$RUNNER_TYPE" = "ghost" ]; then
 fi
 
 ## Fetch remove token
-ZONE=$(curl -H Metadata-Flavor:Google http://metadata/computeMetadata/v1/instance/zone)
-FUNCTION_URL=$(gcloud compute instances describe "$HOSTNAME" --zone "$ZONE" --flatten="metadata[github-api-trigger-url]" --format=object)
-GITHUB_ORG=$(gcloud compute instances describe "$HOSTNAME" --zone "$ZONE" --flatten="metadata[github-org]" --format=object)
-PAYLOAD="{\"scope\":\"actions\",\"function\":\"createRemoveTokenForOrg\",\"params\":{\"org\":\"$GITHUB_ORG\"}}"
-REMOVE_TOKEN_RESULT=$(curl "$FUNCTION_URL" -H "Authorization: Bearer $(gcloud auth print-identity-token)" -d "$PAYLOAD" -H "Content-Type: application/json")
-REMOVE_TOKEN=$(jq -r .token <<< "$REMOVE_TOKEN_RESULT")
+FUNCTION_URL=$(curl -H Metadata-Flavor:Google http://metadata/computeMetadata/v1/instance/attributes/get-remove-token-trigger-url)
+REMOVE_TOKEN=$(curl -s -H "Authorization: Bearer $(gcloud auth print-identity-token)" $FUNCTION_URL)
 
 if [ -n "$REMOVE_TOKEN" ]; then
   echo "remove token fetched with success"
@@ -28,6 +24,8 @@ fi
 
 ## Unregister runner
 cd "/home/$RUNNER_USER/actions-runner" || exit 1
+./svc.sh stop
+./svc.sh uninstall
 sudo -u $RUNNER_USER ./config.sh remove --token "$REMOVE_TOKEN"
 cd /home/$RUNNER_USER || exit 1
 
