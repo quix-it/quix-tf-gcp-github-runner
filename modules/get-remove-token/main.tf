@@ -6,7 +6,24 @@ data "archive_file" "get_remove_token" {
 }
 
 resource "google_storage_bucket" "get_remove_token_bucket" {
-  name = "get_remove_token_bucket_${var.google.env}"
+  name                        = "get_remove_token_bucket_${var.google.env}"
+  location                    = var.google.region
+  force_destroy               = true
+  uniform_bucket_level_access = true
+}
+
+data "google_iam_policy" "admin" {
+  binding {
+    role = "roles/storage.admin"
+    members = [
+      "projectOwner:${var.google.project}",
+    ]
+  }
+}
+
+resource "google_storage_bucket_iam_policy" "get_remove_token_bucket_admin_policy" {
+  bucket      = google_storage_bucket.get_remove_token_bucket.name
+  policy_data = data.google_iam_policy.admin.policy_data
 }
 
 resource "google_storage_bucket_object" "get_remove_token" {

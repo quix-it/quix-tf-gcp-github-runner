@@ -104,7 +104,7 @@ async function checkGitHubRunnerStatus (runnerName, targetStatus) {
 async function getNonBusyGcpGitHubRunnersCount () {
   const gcpGitHubRunners = await getGcpGitHubRunners()
   const nonBusyGcpGitHubRunners = gcpGitHubRunners.filter(gitHubRunner => {
-    return gitHubRunner.busy === false
+    return ( gitHubRunner.busy === false && gitHubRunner.status != 'offline' )
   })
   const nonBusyGcpGitHubRunnersCount = nonBusyGcpGitHubRunners.length
   return nonBusyGcpGitHubRunnersCount

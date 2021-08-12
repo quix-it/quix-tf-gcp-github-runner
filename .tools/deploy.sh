@@ -5,7 +5,7 @@ set -e
 # Printing script usage
 program_name=$0
 usage () {
-  echo "usage: $program_name { dev | prod | --google-env-file google-env-file.json --github-env-file github-env-file.json --backend-config-file backend.json } [ --skip-packer-deploy ] [ --skip-terraform-deploy ] [ --auto-approve ]"
+  echo "usage: $program_name { linux | windows | --google-env-file google-env-file.json --github-env-file github-env-file.json --backend-config-file backend.json } [ --skip-packer-deploy ] [ --skip-terraform-deploy ] [ --auto-approve ]"
   exit 1
 }
 
@@ -67,15 +67,15 @@ skip_packer_deploy=false
 skip_terraform_deploy=false
 auto_approve=false
 skip_function_rebuild=false
-
+platform=""
 # Parsing script params
 while true; do
   case "$1" in
     --google-env-file ) google_env_file="$2"; shift 2 ;;
     --github-env-file ) github_env_file="$2"; shift 2 ;;
     --backend-config-file ) backend_config_file="$2"; shift 2 ;;
-    dev ) dev=true; shift 1 ;;
-    prod ) prod=true; shift 1;;
+    linux ) platform=linux; shift 1 ;;
+    windows ) platform=windows; shift 1;;
     --skip-packer-deploy ) skip_packer_deploy=true; shift 1;;
     --skip-terraform-deploy ) skip_terraform_deploy=true; shift 1;;
     --auto-approve ) auto_approve=true; shift 1;;
@@ -84,17 +84,13 @@ while true; do
   esac
 done
 
-if [ "$dev" = true ]; then
-  google_env_file="google-dev.tfvars.json"
-  github_env_file="github-dev.tfvars.json"
-  backend_config_file="backend-dev.tfvars.json"
+if [ -z "$platform" ]; then
+  usage
 fi
 
-if [ "$prod" = true ]; then
-  google_env_file="google-prod.tfvars.json"
-  github_env_file="github-prod.tfvars.json"
-  backend_config_file="backend-prod.tfvars.json"
-fi
+google_env_file="google-${platform}.tfvars.json"
+github_env_file="github-${platform}.tfvars.json"
+backend_config_file="backend-${platform}.tfvars.json"
 
 # Checking script params
 if [ -z "$google_env_file" ]; then

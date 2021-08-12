@@ -5,7 +5,24 @@ data "archive_file" "github_api_zip" {
 }
 
 resource "google_storage_bucket" "github_api_bucket" {
-  name = "github_api_bucket_${var.google.env}"
+  name                        = "github_api_bucket_${var.google.env}"
+  location                    = var.google.region
+  force_destroy               = true
+  uniform_bucket_level_access = true
+}
+
+data "google_iam_policy" "admin" {
+  binding {
+    role = "roles/storage.admin"
+    members = [
+      "projectOwner:${var.google.project}",
+    ]
+  }
+}
+
+resource "google_storage_bucket_iam_policy" "github_api_bucket_admin_policy" {
+  bucket      = google_storage_bucket.github_api_bucket.name
+  policy_data = data.google_iam_policy.admin.policy_data
 }
 
 resource "google_storage_bucket_object" "github_api_zip" {

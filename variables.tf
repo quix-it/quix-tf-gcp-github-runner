@@ -50,6 +50,7 @@ variable "google" {
     credentials_json_b64 = string
     env                  = string
     time_zone            = string
+    artifacts_bucket     = string
   })
   description = <<EOT
   Represents the GCP project hosting the virtual machines acting as GitHub Action self hosted runners. Check [GCP setup](#google-cloud-plateform-setup).<br>

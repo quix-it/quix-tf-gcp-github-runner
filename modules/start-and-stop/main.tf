@@ -6,7 +6,24 @@ data "archive_file" "start_and_stop_zip" {
 }
 
 resource "google_storage_bucket" "start_and_stop_bucket" {
-  name = "start_and_stop_bucket_${var.google.env}"
+  name                        = "start_and_stop_bucket_${var.google.env}"
+  location                    = var.google.region
+  force_destroy               = true
+  uniform_bucket_level_access = true
+}
+
+data "google_iam_policy" "admin" {
+  binding {
+    role = "roles/storage.admin"
+    members = [
+      "projectOwner:${var.google.project}",
+    ]
+  }
+}
+
+resource "google_storage_bucket_iam_policy" "start_and_stop_bucket_admin_policy" {
+  bucket      = google_storage_bucket.start_and_stop_bucket.name
+  policy_data = data.google_iam_policy.admin.policy_data
 }
 
 resource "google_storage_bucket_object" "start_and_stop_zip" {
@@ -28,24 +45,24 @@ resource "google_cloudfunctions_function" "start_and_stop" {
   max_instances         = 1
 
   environment_variables = {
-    "GOOGLE_ZONE"              = var.google.zone
-    "GOOGLE_ENV"               = var.google.env
-    "GOOGLE_PROJECT"           = var.google.project
-    "GOOGLE_TIMEZONE"          = var.google.time_zone
-    "RUNNER_TAINT_LABELS"      = var.runner.taint_labels
-    "RUNNER_MACHINE_TYPE"      = var.runner.type
-    "RUNNER_PREEMPTIBLE"       = var.runner.preemptible
-    "RUNNER_SERVICE_ACCOUNT"   = google_service_account.runner.email
-    "RUNNER_NETWORK"           = var.runner.network
-    "RUNNER_IMAGE"             = var.runner.image
-    "SCALING_IDLE_COUNT"       = var.scaling.idle_count
-    "SCALING_IDLE_SCHEDULE"    = var.scaling.idle_schedule
-    "SCALING_UP_RATE"          = var.scaling.up_rate
-    "SCALING_UP_MAX"           = var.scaling.up_max
-    "SCALING_DOWN_RATE"        = var.scaling.down_rate
-    "GITHUB_API_TRIGGER_URL"   = var.github_api_trigger_url
-    "GITHUB_ORG"               = var.github_org
-    "REMOVE_TOKEN_TRIGGER_URL" = var.get_remove_token_trigger_url
+    "GOOGLE_ZONE"                  = var.google.zone
+    "GOOGLE_ENV"                   = var.google.env
+    "GOOGLE_PROJECT"               = var.google.project
+    "GOOGLE_TIMEZONE"              = var.google.time_zone
+    "RUNNER_TAINT_LABELS"          = var.runner.taint_labels
+    "RUNNER_MACHINE_TYPE"          = var.runner.type
+    "RUNNER_PREEMPTIBLE"           = var.runner.preemptible
+    "RUNNER_SERVICE_ACCOUNT"       = google_service_account.runner.email
+    "RUNNER_NETWORK"               = var.runner.network
+    "RUNNER_IMAGE"                 = var.runner.image
+    "SCALING_IDLE_COUNT"           = var.scaling.idle_count
+    "SCALING_IDLE_SCHEDULE"        = var.scaling.idle_schedule
+    "SCALING_UP_RATE"              = var.scaling.up_rate
+    "SCALING_UP_MAX"               = var.scaling.up_max
+    "SCALING_DOWN_RATE"            = var.scaling.down_rate
+    "GITHUB_API_TRIGGER_URL"       = var.github_api_trigger_url
+    "GITHUB_ORG"                   = var.github_org
+    "REMOVE_TOKEN_TRIGGER_URL"     = var.get_remove_token_trigger_url
   }
 
   event_trigger {
@@ -55,7 +72,6 @@ resource "google_cloudfunctions_function" "start_and_stop" {
       retry = true
     }
   }
-
 }
 
 resource "google_pubsub_topic" "start_and_stop" {
@@ -160,6 +176,6 @@ output "function_service_account_name" {
   value = google_service_account.start_and_stop.email
 }
 
-output "runner_service_account_name" {
+output "runner_service_account_email" {
   value = google_service_account.runner.email
 }
