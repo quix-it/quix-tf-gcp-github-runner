@@ -9,11 +9,14 @@ module.exports.deleteGitHubRunner = deleteGitHubRunner
 module.exports.filterGitHubRunner = filterGitHubRunner
 module.exports.getGitHubRunnerByName = getGitHubRunnerByName
 module.exports.checkGitHubRunnerStatus = checkGitHubRunnerStatus
-module.exports.getNonBusyGcpGitHubRunnersCount = getNonBusyGcpGitHubRunnersCount
+module.exports.getNotBusyGcpGitHubRunnersCount = getNotBusyGcpGitHubRunnersCount
+module.exports.getNotBusyGcpGitHubRunners = getNotBusyGcpGitHubRunners
+module.exports.getAvailableGitHubRunners = getAvailableGitHubRunners
 module.exports.gitHubGhostRunnerExists = gitHubGhostRunnerExists
 module.exports.getOfflineGitHubRunners = getOfflineGitHubRunners
 module.exports.listWorkflowRunsForRepo = listWorkflowRunsForRepo
 module.exports.createRegistrationToken = createRegistrationToken
+module.exports.getCheckRun = getCheckRun
 
 async function getGitHubRunners () {
   const githubApiFunctionUrl = process.env.GITHUB_API_TRIGGER_URL
@@ -101,13 +104,16 @@ async function checkGitHubRunnerStatus (runnerName, targetStatus) {
   return Promise.resolve(true)
 }
 
-async function getNonBusyGcpGitHubRunnersCount () {
+async function getNotBusyGcpGitHubRunnersCount () {
+  const notBusyRunners = await getNotBusyGcpGitHubRunners()
+  return notBusyRunners.length
+}
+
+async function getNotBusyGcpGitHubRunners () {
   const gcpGitHubRunners = await getGcpGitHubRunners()
-  const nonBusyGcpGitHubRunners = gcpGitHubRunners.filter(gitHubRunner => {
-    return ( gitHubRunner.busy === false && gitHubRunner.status != 'offline' )
+  return gcpGitHubRunners.filter(gitHubRunner => {
+    return ( gitHubRunner.busy === false)
   })
-  const nonBusyGcpGitHubRunnersCount = nonBusyGcpGitHubRunners.length
-  return nonBusyGcpGitHubRunnersCount
 }
 
 async function getOfflineGitHubRunners () {
@@ -116,6 +122,13 @@ async function getOfflineGitHubRunners () {
     return gcpGitHubRunner.status === 'offline'
   })
   return offlineGcpGitHubRunners
+}
+
+async function getAvailableGitHubRunners () {
+  const notBusyRunners = await getNotBusyGcpGitHubRunners()
+  return notBusyRunners.filter(runner => {
+    return runner.status !== 'offline'
+  })
 }
 
 async function listWorkflowRunsForRepo (owner, repo) {
@@ -194,4 +207,23 @@ async function createRegistrationToken () {
     }
   })
   return res.data.token
+}
+
+async function getCheckRun (owner, repo, check_run_id) {
+  const githubApiFunctionUrl = process.env.GITHUB_API_TRIGGER_URL
+  const client = await auth.getIdTokenClient(githubApiFunctionUrl)
+  const res = await client.request({
+    url: githubApiFunctionUrl,
+    method: 'POST',
+    data: {
+      scope: 'checks',
+      function: 'get',
+      params: {
+        owner: owner,
+        repo: repo,
+        check_run_id: check_run_id
+      }
+    }
+  })
+  return res.data
 }

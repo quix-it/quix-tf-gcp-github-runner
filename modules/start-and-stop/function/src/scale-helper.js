@@ -42,7 +42,7 @@ async function scaleUpRunners (count) {
     createPromises[i] = createRunnerHelper.createRunner(runnerType.default)
   }
   await Promise.all(createPromises)
-  console.info(chalk.green(`scale up ${count} runners succeed`))
+  console.info(chalk.green(`scale up ${count} runners succeeded`))
 }
 
 async function scaleDownRunners (count) {
@@ -64,5 +64,5 @@ async function scaleDownRunners (count) {
   await Promise.all(runnersToDelete.map(async (gitHubRunner) => {
     await deleteRunnerHelper.deleteRunner(gitHubRunner.name)
   }))
-  console.info(chalk.green(`scale down ${count} runners succeed`))
+  console.info(chalk.green(`scale down ${count} runners succeeded`))
 }

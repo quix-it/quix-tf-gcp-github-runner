@@ -31,15 +31,15 @@ export const githubHook: HttpFunction = async (req: Request, res: Response) => {
   //   return
   // }
 
-  // const payload = {
-  //   check_run_id: req.body.check_run.id,
-  //   head_sha: req.body.check_run.head_sha,
-  //   check_suite_id: req.body.check_run.check_suite.id,
-  //   repository_full_name: req.body.repository.full_name,
-  //   repository_name: req.body.repository.name,
-  //   repository_owner: req.body.repository.owner.login
-  // }
-  await sendScaleUpMessage()
+  const payload = {
+    check_run_id: req.body.check_run.id,
+    // head_sha: req.body.check_run.head_sha,
+    // check_suite_id: req.body.check_run.check_suite.id,
+    // repository_full_name: req.body.repository.full_name,
+    repo: req.body.repository.name,
+    owner: req.body.repository.owner.login
+  }
+  await sendScaleUpMessage(payload)
 
   res.sendStatus(202)
 }

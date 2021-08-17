@@ -2,7 +2,7 @@ data "archive_file" "get_remove_token" {
   type        = "zip"
   source_dir  = "${path.module}/function/"
   output_path = "${path.module}/get_remove_token.zip"
-  excludes    = ["test"]
+  excludes    = ["test", "node_modules"]
 }
 
 resource "google_storage_bucket" "get_remove_token_bucket" {

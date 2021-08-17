@@ -12,6 +12,6 @@ async function renewRunners () {
   await Promise.all(agedRunnersVms.map(async (agedRunnerVm) => {
     await deleteRunnerHelper.deleteRunner(agedRunnerVm.name)
   }))
-  await scalePolicy.scaleUp() // Ensure min number of runners
+  await scalePolicy.smartScaleUp() // Ensure min number of runners
   console.info(chalk.green('runners renewed'))
 }
