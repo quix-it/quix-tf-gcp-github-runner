@@ -64,6 +64,6 @@ packer_cmd="packer $packer_action \
 eval "$packer_cmd"
 
 if [ ! -z "$network" ]; then
-  gcloud compute firewall-rules delete --quiet $rule_name
+  gcloud compute firewall-rules list --filter=network=${network} --format=json | jq -r '.[].name' | xargs -r -n1 gcloud compute firewall-rules --quiet delete
   gcloud compute networks delete --quiet $network
 fi

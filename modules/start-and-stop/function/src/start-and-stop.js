@@ -42,7 +42,7 @@ async function startAndStop (data, context) {
         await renewRunners()
         break
       case 'scale_up':
-        await scaleUp()
+        await smartScaleUp(payload)
         break
       case 'scale_down':
         await scaleDown()
@@ -66,8 +66,8 @@ async function dev () {
   }
 }
 
-async function scaleUp () {
-  await scalePolicy.scaleUp()
+async function smartScaleUp (owner, repo, check_run_id) {
+  await scalePolicy.smartScaleUp(owner, repo, check_run_id)
 }
 
 async function scaleDown () {
