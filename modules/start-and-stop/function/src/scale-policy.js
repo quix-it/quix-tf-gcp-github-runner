@@ -40,7 +40,7 @@ async function smartScaleUp(params = {}) {
         console.log(chalk.red(`Scale up retried ${loop} times for (${owner}, ${repo}, ${check_run_id}): giving up.`))
       } else if (owner && repo && check_run_id) {
         // wait and check request status
-        console.log(chalk.yellow(`Found ${available.length} available runners. Waiting ${waitForMillis} ms for one of them to pick up the current job.`))
+        console.log(chalk.yellow(`Found ${available.length} available runners. Waiting ${waitForMillis} ms for one of them to pick up the current job (${owner}, ${repo}, ${check_run_id}).`))
         setTimeout(() => {
           gitHubHelper.getCheckRun(owner, repo, check_run_id).then( (checkrun) => {
             if (checkrun.status == 'queued') {
@@ -75,6 +75,12 @@ async function scaleUp () {
     console.log(`non busy runners (${nonBusyRunnersCount}) >= threshold (${scalePolicySettings.upRate()}), nothing to do`)
   }
   console.log(chalk.green('scale up done'))
+}
+
+module.exports.smartScaleDown = smartScaleDown
+
+async function smartScaleDown() {
+  await scaleHelper.smartScaleDownRunners(scalePolicySettings.downRate(), scalePolicySettings.idleCount(), scalePolicySettings.gracePeriodSeconds())
 }
 
 async function scaleDown () {

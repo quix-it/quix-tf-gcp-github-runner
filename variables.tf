@@ -14,12 +14,13 @@ variable "runner" {
 
 variable "scaling" {
   type = object({
-    idle_count    = number
-    idle_schedule = string
-    up_rate       = number
-    up_max        = number
-    down_rate     = number
-    down_schedule = string
+    idle_count           = number
+    idle_schedule        = string
+    up_rate              = number
+    up_max               = number
+    down_rate            = number
+    down_schedule        = string
+    grace_period_seconds = number
   })
   description = <<EOT
   `idle_count`: The number of runners to keep [idle](#idle-runner).<br>
@@ -27,7 +28,8 @@ variable "scaling" {
   `up_rate`: The number of runners to create when [scaling up](#scale-up).<br>
   `up_max`: The maximum number of runners.<br>
   `down_rate`: The number of inative runners to delete when [scaling down](#scale-down).<br>
-  `down_schedule`: A cron to trigger regularly [scaling down](#scale-down). [Syntax](#cron-syntax).
+  `down_schedule`: A cron to trigger regularly [scaling down](#scale-down). [Syntax](#cron-syntax).<br>
+  `grace_period_seconds`: Maturity needed for a VM to be decommissioned during scale down operations (prevents early deletions when scale down occurs right after a scale up).
   EOT
 }
 

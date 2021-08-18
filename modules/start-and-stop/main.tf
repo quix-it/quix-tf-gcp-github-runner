@@ -60,6 +60,7 @@ resource "google_cloudfunctions_function" "start_and_stop" {
     "SCALING_UP_RATE"              = var.scaling.up_rate
     "SCALING_UP_MAX"               = var.scaling.up_max
     "SCALING_DOWN_RATE"            = var.scaling.down_rate
+    "SCALING_GRACE_PERIOD_SECONDS" = var.scaling.grace_period_seconds
     "GITHUB_API_TRIGGER_URL"       = var.github_api_trigger_url
     "GITHUB_ORG"                   = var.github_org
     "REMOVE_TOKEN_TRIGGER_URL"     = var.get_remove_token_trigger_url
