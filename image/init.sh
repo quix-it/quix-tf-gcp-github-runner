@@ -36,7 +36,7 @@ sudo systemctl start docker
 sudo systemctl enable docker
 sudo usermod -aG docker $RUNNER_USER
 # Esnure Docker is correctly setup
-sudo -u $RUNNER_USER docker run hello-world
+sudo -u $RUNNER_USER docker run --rm hello-world
 
 ## Stack driver
 curl -sSO https://dl.google.com/cloudagents/add-monitoring-agent-repo.sh

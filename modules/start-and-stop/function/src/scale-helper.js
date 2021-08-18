@@ -45,6 +45,47 @@ async function scaleUpRunners (count) {
   console.info(chalk.green(`scale up ${count} runners succeeded`))
 }
 
+module.exports.smartScaleDownRunners = smartScaleDownRunners
+
+async function smartScaleDownRunners (downRate, idleCount, minAgeSeconds = 0) {
+  // filter VMs by age
+  // remove ALL offline runners
+  // do not touch runners younger than ${minAgeSeconds} seconds
+  // remove at most ${downRate} runners
+  // retain at least ${idleCount} runners
+  const age = minAgeSeconds || 0
+
+  console.info(`scale down ${downRate < 0 ? "all" : downRate} online runners older than ${age} seconds keeping at least ${idleCount} runners`)
+
+  const vms = await getRunnerHelper.getRunnersVms(age)
+
+  // remove offline runners
+  console.info(`remove offline github runners older than ${age} seconds`)
+  const offlineGcpGitHubRunners = (await gitHubHelper.getOfflineGitHubRunners()).filter( runner => { vms.map(vm => { vm.name }).includes(runner.name) })
+  console.info(`${offlineGcpGitHubRunners.length} GitHub runners offline older than ${age} seconds`)
+  const offlineDeleted = await Promise.all(offlineGcpGitHubRunners.map(async offlineGitHubRunner => {
+    await deleteRunnerHelper.deleteRunner(offlineGitHubRunner.name)
+  }))
+  console.info(chalk.green(`${offlineDeleted.map(result => {result}).length} offline github runners removed`))
+
+  // scale down not busy runners
+  if (downRate === 0) {
+    console.info(chalk.green(`scale down rate is 0, nothing to do`))
+    return
+  }
+  const notBusyRunners = await gitHubHelper.getNotBusyGcpGitHubRunners()
+  const runners = notBusyRunners.filter( gitHubRunner => vms.map(vm => vm.name).includes(gitHubRunner.name) )
+  const runnersToDelete = (downRate > 0) ? runners.slice(0, downRate) : runners.map(x => x)
+  while ((runnersToDelete.length > 0) && (runners.length - runnersToDelete.length < idleCount)) {
+    runnersToDelete.pop()
+  }
+  console.info(`${runnersToDelete.length} not busy gcp runners to delete`)
+  const results = await Promise.all(runnersToDelete.map(async (gitHubRunner) => {
+    await deleteRunnerHelper.deleteRunner(gitHubRunner.name)
+  }))
+  console.info(chalk.green(`scale down completed: ${results.filter(result => {result}).length} deleted, ${results.filter(result => {!result}).length} retained`))
+}
+
 async function scaleDownRunners (count) {
   console.info(`scale down ${count} runners...`)
   if (count === 0) {

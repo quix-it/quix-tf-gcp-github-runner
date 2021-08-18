@@ -128,8 +128,8 @@ resource "google_cloudfunctions_function_iam_member" "get_remove_token_invokers"
 }
 
 resource "google_storage_bucket_iam_member" "artifacts_managers" {
-  count    = length(local.artifacts_managers)
-  bucket   = module.staging_artifacts.staging_artifacts_bucket
-  role     = module.staging_artifacts.artifacts_manager_role
-  member   = local.artifacts_managers[count.index]
+  count  = length(local.artifacts_managers)
+  bucket = module.staging_artifacts.staging_artifacts_bucket
+  role   = module.staging_artifacts.artifacts_manager_role
+  member = local.artifacts_managers[count.index]
 }

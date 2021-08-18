@@ -71,7 +71,8 @@ async function smartScaleUp (owner, repo, check_run_id) {
 }
 
 async function scaleDown () {
-  await scalePolicy.scaleDown()
+  await scalePolicy.smartScaleDown()
+  // await scalePolicy.scaleDown()
 }
 
 async function createAllRunners () {

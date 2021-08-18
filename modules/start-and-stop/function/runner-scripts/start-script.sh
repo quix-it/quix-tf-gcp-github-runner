@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "start startup script"
+echo "startup script started"
 
 RUNNER_USER="runner"
 
@@ -36,11 +36,10 @@ sudo -u $RUNNER_USER ./config.sh  --unattended --url https://github.com/"$GITHUB
 if [ "$RUNNER_TYPE" = "ghost" ]; then
   echo "ghost runner, not launching runner"
 else   
-  echo "runner type $RUNNER_TYPE, installing service"
-  ./svc.sh install $RUNNER_USER
-  ./svc.sh start
+  echo "runner type $RUNNER_TYPE, launching runner"
+  sudo -u $RUNNER_USER ./run.sh &
 fi
 
-echo "end startup script with success"
+echo "startup script completed successfully"
 
 exit 0
