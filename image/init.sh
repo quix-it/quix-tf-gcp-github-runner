@@ -15,7 +15,8 @@ sudo apt-get -y update
 sudo apt-get -y install \
     git \
     curl \
-    jq
+    jq \
+    zip
 
 ## Docker
 sudo apt-get -y install \

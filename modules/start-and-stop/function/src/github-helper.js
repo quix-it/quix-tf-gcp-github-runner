@@ -2,6 +2,7 @@ const { GoogleAuth } = require('google-auth-library')
 const auth = new GoogleAuth()
 const createRunnerHelper = require('./create-runner-helper')
 const runnerType = require('./runner-type')
+const YAML = require('yaml')
 
 module.exports.getGitHubRunners = getGitHubRunners
 module.exports.getGcpGitHubRunners = getGcpGitHubRunners
@@ -17,6 +18,7 @@ module.exports.getOfflineGitHubRunners = getOfflineGitHubRunners
 module.exports.listWorkflowRunsForRepo = listWorkflowRunsForRepo
 module.exports.createRegistrationToken = createRegistrationToken
 module.exports.getCheckRun = getCheckRun
+module.exports.getJobLabels = getJobLabels
 
 async function getGitHubRunners () {
   const githubApiFunctionUrl = process.env.GITHUB_API_TRIGGER_URL
@@ -226,4 +228,97 @@ async function getCheckRun (owner, repo, check_run_id) {
     }
   })
   return res.data
+}
+
+async function getJobForWorkflowRun (owner, repo, job_id) {
+  const githubApiFunctionUrl = process.env.GITHUB_API_TRIGGER_URL
+  const client = await auth.getIdTokenClient(githubApiFunctionUrl)
+  const res = await client.request({
+    url: githubApiFunctionUrl,
+    method: 'POST',
+    data: {
+      scope: 'actions',
+      function: 'getJobForWorkflowRun',
+      params: {
+        owner: owner,
+        repo: repo,
+        job_id: job_id
+      }
+    }
+  })
+  return res.data
+}
+
+async function getWorkflowRun (owner, repo, run_id) {
+  const githubApiFunctionUrl = process.env.GITHUB_API_TRIGGER_URL
+  const client = await auth.getIdTokenClient(githubApiFunctionUrl)
+  const res = await client.request({
+    url: githubApiFunctionUrl,
+    method: 'POST',
+    data: {
+      scope: 'actions',
+      function: 'getWorkflowRun',
+      params: {
+        owner: owner,
+        repo: repo,
+        run_id: run_id
+      }
+    }
+  })
+  return res.data
+}
+
+async function getWorkflow (owner, repo, workflow_id) {
+  const githubApiFunctionUrl = process.env.GITHUB_API_TRIGGER_URL
+  const client = await auth.getIdTokenClient(githubApiFunctionUrl)
+  const res = await client.request({
+    url: githubApiFunctionUrl,
+    method: 'POST',
+    data: {
+      scope: 'actions',
+      function: 'getWorkflow',
+      params: {
+        owner: owner,
+        repo: repo,
+        workflow_id: workflow_id
+      }
+    }
+  })
+  return res.data
+}
+
+async function getContent (owner, repo, path, ref = "") {
+  const githubApiFunctionUrl = process.env.GITHUB_API_TRIGGER_URL
+  const client = await auth.getIdTokenClient(githubApiFunctionUrl)
+  const params = {
+    owner: owner,
+    repo: repo,
+    path: path
+  }
+  if (ref && ref.length > 0) {
+    params['ref'] = ref
+  }
+  const res = await client.request({
+    url: githubApiFunctionUrl,
+    method: 'POST',
+    data: {
+      scope: 'repos',
+      function: 'getContent',
+      params: params
+    }
+  })
+  return res.data
+}
+
+async function getJobLabels(owner, repo, job_id) {
+  const job = await getJobForWorkflowRun(owner, repo, job_id)
+  const run = await getWorkflowRun(owner, repo, job.run_id)
+  const wf = await getWorkflow(owner, repo, run.workflow_id)
+  const file = await getContent(owner, repo, wf.path, job.head_sha)
+
+  const ascii = Buffer.from(file.content, 'base64').toString('ascii')
+  const workflow = YAML.parse(ascii)
+  const labels = workflow['jobs'][job.name]['runs-on']
+
+  return labels
 }
