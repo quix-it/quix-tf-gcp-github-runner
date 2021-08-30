@@ -1,5 +1,4 @@
 const GithubHelper = require('./github-helper.js')
-const Util = require('util')
 
 /**
  * HTTP Cloud Function.
