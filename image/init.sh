@@ -39,11 +39,24 @@ sudo usermod -aG docker $RUNNER_USER
 # Esnure Docker is correctly setup
 sudo -u $RUNNER_USER docker run --rm hello-world
 
+mkdir -p /etc/docker
+cat <<EOF | sudo tee /etc/docker/daemon.json
+{
+  "registry-mirrors": ["https://mirror.gcr.io"]
+}
+EOF
+
 ## Stack driver
 curl -sSO https://dl.google.com/cloudagents/add-monitoring-agent-repo.sh
 sudo bash add-monitoring-agent-repo.sh
 sudo apt-get -y update
 sudo apt-get install -y 'stackdriver-agent=6.*'
+
+## GitHub
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo gpg --dearmor -o /usr/share/keyrings/githubcli-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+apt-get update
+sudo apt-get -y install gh
 
 ## Runner
 cd /home/$RUNNER_USER
