@@ -1,14 +1,21 @@
 variable "runner" {
   type = object({
-    type         = string
-    taint_labels = bool
-    preemptible  = bool
-    network      = string
-    image        = string
+    type              = string
+    taint_labels      = bool
+    preemptible       = bool
+    network           = string
+    image             = string
+    os_label          = string
+    additional_labels = list(string)
   })
   description = <<EOT
   `type`: The [machine type](https://cloud.google.com/compute/docs/machine-types) of the runners, for instance `n1-standard-2`.<br>
-  `taint_labels`: Enable tainting runner labels, useful to not mix debug and prod runner for your organization
+  `taint_labels`: Enable tainting runner labels, useful to not mix debug and prod runner for your organization.<br>
+  `preemptible`: Whether or not the runners must be created on preemptible instances.<br>
+  `network`: Network name to attach to the runners' network interfaces (for isolating them from the rest of the VPC).<br>
+  `image`: Name of the image to deploy new instances from.<br>
+  `os_label`: Name of the operating system installed on the runner instance, to be used by GitHub's scheduler. Can be either 'linux' or 'windows'.<br>
+  `additional_labels`: List of comma-separated labels to associate to the runner during GitHub registration (apart from the Google env and the tainted docker).<br>
   EOT
 }
 

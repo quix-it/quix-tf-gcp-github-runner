@@ -127,6 +127,10 @@ async function createVmConfig (type, env) {
           key: 'registration-token'
         },
         {
+          value: process.env.RUNNER_LABELS,
+          key: 'runner-labels'
+        },
+        {
           value: process.env.REMOVE_TOKEN_TRIGGER_URL,
           key: 'get-remove-token-trigger-url'
         },

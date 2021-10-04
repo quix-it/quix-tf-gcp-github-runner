@@ -32,6 +32,10 @@ resource "google_storage_bucket_object" "start_and_stop_zip" {
   source = "${path.module}/start_and_stop.zip"
 }
 
+locals {
+  runner_labels = join(",", setunion(var.runner.os_label, var.runner.additional_labels))
+}
+
 resource "google_cloudfunctions_function" "start_and_stop" {
   name                  = "start_and_stop_function"
   description           = "Handling start and stop of runners"
@@ -55,6 +59,7 @@ resource "google_cloudfunctions_function" "start_and_stop" {
     "RUNNER_SERVICE_ACCOUNT"       = google_service_account.runner.email
     "RUNNER_NETWORK"               = var.runner.network
     "RUNNER_IMAGE"                 = var.runner.image
+    "RUNNER_LABELS"                = local.runner_labels
     "SCALING_IDLE_COUNT"           = var.scaling.idle_count
     "SCALING_IDLE_SCHEDULE"        = var.scaling.idle_schedule
     "SCALING_UP_RATE"              = var.scaling.up_rate

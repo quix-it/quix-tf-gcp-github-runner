@@ -14,6 +14,7 @@ RUNNER_TYPE=$(curl -H Metadata-Flavor:Google http://metadata/computeMetadata/v1/
 GOOGLE_ENV=$(curl -H Metadata-Flavor:Google http://metadata/computeMetadata/v1/instance/attributes/env)
 GITHUB_ORG=$(curl -H Metadata-Flavor:Google http://metadata/computeMetadata/v1/instance/attributes/github-org)
 REGISTRATION_TOKEN=$(curl -H Metadata-Flavor:Google http://metadata/computeMetadata/v1/instance/attributes/registration-token)
+RUNNER_LABELS=$(curl -H Metadata-Flavor:Google http://metadata/computeMetadata/v1/instance/attributes/runner-labels)
 
 if [ -n "$REGISTRATION_TOKEN" ]; then
   echo "registration token fetched successfully"
@@ -31,7 +32,10 @@ else
   docker_label="docker"
 fi
 
-sudo -u $RUNNER_USER ./config.sh  --unattended --url https://github.com/"$GITHUB_ORG" --token "$REGISTRATION_TOKEN" --labels "$docker_label","$GOOGLE_ENV",gcp --name "$HOSTNAME"
+LABELS="$docker_label","$GOOGLE_ENV","$RUNNER_LABELS"
+LABELS=$(jq --arg a "$LABELS" -nr '$a|split(",")|map(select(length>0))|unique|join(",")')
+
+sudo -u $RUNNER_USER ./config.sh  --unattended --url https://github.com/"$GITHUB_ORG" --token "$REGISTRATION_TOKEN" --labels "$LABELS" --name "$HOSTNAME"
 
 if [ "$RUNNER_TYPE" = "ghost" ]; then
   echo "ghost runner, not launching runner"
