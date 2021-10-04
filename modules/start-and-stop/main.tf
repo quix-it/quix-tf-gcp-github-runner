@@ -33,7 +33,7 @@ resource "google_storage_bucket_object" "start_and_stop_zip" {
 }
 
 locals {
-  runner_labels = join(",", setunion(var.runner.os_label, var.runner.additional_labels))
+  runner_labels = join(",", setunion([var.runner.os_label], var.runner.additional_labels))
 }
 
 resource "google_cloudfunctions_function" "start_and_stop" {
