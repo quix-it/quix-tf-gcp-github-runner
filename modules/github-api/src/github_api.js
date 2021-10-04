@@ -16,15 +16,15 @@ module.exports.githubApi = async (req, res) => {
     const apiResult = await getApiResult(req.body.scope, req.body.function, req.body.params)
     res.status(200).send(apiResult)
   } catch (err) {
-    console.log(err)
+    console.error(err)
     res.status(400).send(err)
   }
 }
 
-module.exports.dev = async () => {
-  const apiResult = await getApiResult('actions', 'listSelfHostedRunnersForOrg', { org: 'fabernovel' })
-  console.log(apiResult)
-}
+// module.exports.dev = async () => {
+//   const apiResult = await getApiResult('actions', 'listSelfHostedRunnersForOrg', { org: 'fabernovel' })
+//   console.log(apiResult)
+// }
 
 async function getApiResult (scopeName, functionName, params) {
   console.log(`calling octokit.${scopeName}.${functionName}(${Util.inspect(params)})`)
